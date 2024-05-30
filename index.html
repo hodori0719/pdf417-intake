@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="ZXing for JS">
+
+  <title>Dr. Yoo Rehab Clinic</title>
+
+  <link rel="stylesheet" rel="preload" as="style" onload="this.rel='stylesheet';this.onload=null" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+  <link rel="stylesheet" rel="preload" as="style" onload="this.rel='stylesheet';this.onload=null" href="https://unpkg.com/normalize.css@8.0.0/normalize.css">
+  <link rel="stylesheet" rel="preload" as="style" onload="this.rel='stylesheet';this.onload=null" href="https://unpkg.com/milligram@1.3.0/dist/milligram.min.css">
+  <style>
+    @keyframes pulse {
+        0%, 100% {
+            border: thick solid white;
+        }
+        50% {
+            border: thick solid gray;
+        }
+    }
+    </style>
+</head>
+
+<body>
+
+  <main class="wrapper" style="padding-top:2em">
+
+    <section class="container" id="demo-content">
+      <img src="ypurple.png" alt="Dr Yoo Rehab Clinic">
+        <br></br>
+      <h2 class="title">Dr. Yoo Rehab Clinic New Patient Reception</h2>
+
+      <p>Press the start button below and point the camera at the barcode on the back of the patient's Driver's License. Ensure that the barcode is oriented right-side up in the box below.</p>
+
+      <div id="sourceSelectPanel" style="display:none">
+        <label for="sourceSelect">Change video source:</label>
+        <select id="sourceSelect" style="max-width:400px">
+        </select>
+      </div>
+
+      <div>
+        <video id="video" width="100%" height="300" style="border: 1px solid gray"></video>
+      </div>
+
+
+      <div>
+        <a class="button" id="startButton">Start</a>
+        <a class="button" id="resetButton">Reset</a>
+      </div>
+
+      <div style="display: none">
+        <label for="decoding-style"> Decoding Style:</label>
+        <select id="decoding-style" size="1">
+          <option value="once">Decode once</option>
+          <option value="continuously">Decode continuously</option>
+        </select>
+        </div>
+
+      <label>Result:</label>
+      <pre><code id="result">No barcode detected yet</code></pre>
+
+      <p>Click the button below to download the automatically filled PDF file. You may manually alter the fields once the form is downloaded.</p>
+    <button onclick="fillForm()">Get New Patient Form</button>
+
+    </section>
+
+    <footer class="footer">
+      <section class="container">
+        <p>June Yoo.</p>
+      </section>
+    </footer>
+
+  </main>
+
+  <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+  <script type="text/javascript" src="https://unpkg.com/pdf-lib/dist/pdf-lib.js"></script>
+  <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+  <script type="text/javascript">
+
+    let scannedData = null;
+    let firstName = "";
+    let middleName = "";
+    let lastName = "";
+    let dob = "";
+    let sex = "";
+    let addressst = "";
+    let addresscity = "";
+    let addressstate = "";
+    let addresszip = "";
+
+    function decodeOnce(codeReader, selectedDeviceId) {
+      codeReader.decodeFromInputVideoDevice(selectedDeviceId, 'video').then((result) => {
+        console.log(result)
+        document.getElementById('result').textContent = result.text
+        console.log("bubby:")
+        scannedData = result.text.split("\n");
+        console.log("chubby" + scannedData)
+        for (let meta of scannedData) {
+            console.log(meta);
+            (meta.slice(0, 3) === "DBB") && (dob = meta.slice(3));
+            (meta.slice(0, 3) === "DCS") && (lastName = meta.slice(3));
+            (meta.slice(0, 3) === "DAC") && (firstName = meta.slice(3));
+            (meta.slice(0, 3) === "DAD") && (middleName = meta.slice(3));
+            (meta.slice(0, 3) === "DAG") && (addressst = meta.slice(3));
+            (meta.slice(0, 3) === "DAI") && (addresscity = meta.slice(3));
+            (meta.slice(0, 3) === "DAJ") && (addressstate = meta.slice(3));
+            (meta.slice(0, 3) === "DAK") && (addresszip = meta.slice(3, 8));
+            (meta.slice(0, 3) === "DBC") && (sex = meta.slice(3));
+        }
+      }).catch((err) => {
+        console.error(err)
+        document.getElementById('result').textContent = err
+      })
+    }
+
+    function decodeContinuously(codeReader, selectedDeviceId) {
+      codeReader.decodeFromInputVideoDeviceContinuously(selectedDeviceId, 'video', (result, err) => {
+        if (result) {
+          // properly decoded qr code
+          console.log('Found QR code!', result)
+          scannedData = result.text.split("\n");
+            for (let meta of scannedData) {
+                (meta.slice(0, 3) === "DBB") && (dob = meta.slice(3));
+                (meta.slice(0, 3) === "DCS") && (lastName = meta.slice(3));
+                (meta.slice(0, 3) === "DAC") && (firstName = meta.slice(3));
+                (meta.slice(0, 3) === "DAD") && (middleName = meta.slice(3));
+                (meta.slice(0, 3) === "DAG") && (addressst = meta.slice(3));
+                (meta.slice(0, 3) === "DAI") && (addresscity = meta.slice(3));
+                (meta.slice(0, 3) === "DAJ") && (addressstate = meta.slice(3));
+                (meta.slice(0, 3) === "DAK") && (addresszip = meta.slice(3, 8));
+                (meta.slice(0, 3) === "DBC") && (sex = meta.slice(3));
+            }
+            document.getElementById('result').textContent = "✅ Success for patient " + firstName + ' ' + middleName + ' ' + lastName
+            document.getElementById('video').style.animation = "none"
+            document.getElementById('video').style.border = "thick solid #48f542"
+        }
+
+        if (err) {
+          // As long as this error belongs into one of the following categories
+          // the code reader is going to continue as excepted. Any other error
+          // will stop the decoding loop.
+          //
+          // Excepted Exceptions:
+          //
+          //  - NotFoundException
+          //  - ChecksumException
+          //  - FormatException
+
+          if (err instanceof ZXing.NotFoundException) {
+            console.log('No PDF code found.')
+          }
+
+          if (err instanceof ZXing.ChecksumException) {
+            console.log('A code was found, but it\'s read value was not valid.')
+          }
+
+          if (err instanceof ZXing.FormatException) {
+            console.log('A code was found, but it was in a invalid format.')
+          }
+        }
+      })
+    }
+
+    window.addEventListener('load', function () {
+      let selectedDeviceId;
+      const codeReader = new ZXing.BrowserPDF417Reader()
+      console.log('ZXing code reader initialized')
+
+      codeReader.getVideoInputDevices()
+        .then((videoInputDevices) => {
+          const sourceSelect = document.getElementById('sourceSelect')
+          selectedDeviceId = videoInputDevices[0].deviceId
+          if (videoInputDevices.length >= 1) {
+            videoInputDevices.forEach((element) => {
+              const sourceOption = document.createElement('option')
+              sourceOption.text = element.label
+              sourceOption.value = element.deviceId
+              sourceSelect.appendChild(sourceOption)
+            })
+
+            sourceSelect.onchange = () => {
+              selectedDeviceId = sourceSelect.value;
+            };
+
+            const sourceSelectPanel = document.getElementById('sourceSelectPanel')
+            sourceSelectPanel.style.display = 'block'
+          }
+
+          document.getElementById('startButton').addEventListener('click', () => {
+
+            const decodingStyle = document.getElementById('decoding-style').value;
+
+            // if (decodingStyle == "once") {
+            //  decodeOnce(codeReader, selectedDeviceId);
+            //} else {
+              decodeContinuously(codeReader, selectedDeviceId);
+              document.getElementById('video').style.animation = "pulse 4s infinite"
+            //}
+
+            console.log(`Started decode from camera with id ${selectedDeviceId}`)
+          })
+
+          document.getElementById('resetButton').addEventListener('click', () => {
+            codeReader.reset()
+            document.getElementById('result').textContent = '';
+            console.log('Reset.')
+          })
+
+        })
+        .catch((err) => {
+          console.error(err)
+        })
+    })
+
+    async function fillForm() {
+    const date = new Date();
+
+    let day = date.getDate();
+    let month = date.getMonth() + 1;
+    let year = date.getFullYear();
+
+    // This arrangement can be altered based on how we want the date's format to appear.
+    let currentDate = `${month}-${day}-${year}`;
+
+        // Fetch the PDF with form fields
+    const formUrl = 'https://juneyoo.dev/pdf417-intake/DrYooIntakeForm.pdf'
+    const formPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer())
+
+    // Load a PDF with form fields
+    const pdfDoc = await PDFLib.PDFDocument.load(formPdfBytes)
+
+    // Get the form containing all the fields
+    const form = pdfDoc.getForm()
+
+    // Get all fields in the PDF by their names
+    const longnameField = form.getTextField('fullName')
+    const shortnameField = form.getTextField('shortName')
+    const dobField = form.getTextField('dob')
+    const dateField = form.getTextField('date')
+    const sexField = form.getTextField('sex')
+    const addressField = form.getTextField('address')
+ 
+    const patientButton = form.getCheckBox('toggle_1')
+    const adButton = form.getCheckBox('toggle_2')
+
+    // Fill in the basic info fields
+    longnameField.setText(middleName ? firstName + ' ' + middleName + ' ' + lastName : firstName + ' ' + lastName)
+    shortnameField.setText(firstName + ' ' + lastName)
+    dobField.setText(dob.slice(0,2) + '-' + dob.slice(2,4) + '-' + dob.slice(4))
+    dateField.setText(currentDate)
+    sexField.setText((sex === "1" ? "M" : "F"))
+    addressField.setText(addressst + ', ' + addresscity + ', ' + addressstate + ' ' + addresszip)
+
+    // Serialize the PDFDocument to bytes (a Uint8Array)
+    const pdfBytes = await pdfDoc.save()
+
+            // Trigger the browser to download the PDF document
+    download(pdfBytes, "intakeForm.pdf", "application/pdf");
+    }
+  </script>
+
+</body>
+
+</html>
