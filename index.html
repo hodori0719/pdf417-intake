@@ -166,6 +166,10 @@
     window.addEventListener('load', function () {
       let selectedDeviceId;
       const codeReader = new ZXing.BrowserPDF417Reader()
+      codeReader.AutoRotate = true;
+      codeReader.TryInverted = true;
+      codeReader.TryHarder = true;
+
       console.log('ZXing code reader initialized')
 
       codeReader.getVideoInputDevices()
